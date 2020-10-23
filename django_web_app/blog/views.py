@@ -66,7 +66,13 @@ class PostDetailView(DetailView):
         context = super(PostDetailView, self).get_context_data()
         stuff = get_object_or_404(Post, id=self.kwargs['pk'])
         total_like = stuff.total_like()
+
+        liked = False
+        if stuff.like.filter(id=self.request.user.id).exists():
+            liked = True
+
         context["total_like"] = total_like
+        context["liked"] = liked
         return context
 
 
@@ -81,7 +87,14 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
 def LikeView(request, pk):
     post = get_object_or_404(Post, id=request.POST.get('post_id'))
-    post.like.add(request.user)
+    liked = False
+    if post.like.filter(id=request.user.id).exists():
+        post.like.remove(request.user)
+        liked=False
+    else:
+        post.like.add(request.user)
+        liked=True
+    
     return HttpResponseRedirect(reverse('post-detail',args=[str(pk)]))
 
 class AddCommentView(CreateView):
